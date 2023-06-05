@@ -1,0 +1,30 @@
+version: "3.9"
+
+services:
+  open3dml:
+    image: 3llobo/open3dml:latest
+    container_name: open3dml
+    ports:
+      - 9881:9881
+    volumes:
+      - ../kaggle:/app:rw
+    # GPU support
+    # command: [ "python3", "--version" ]
+    # command: [ "python3", "-c", "import open3d.ml.torch as ml3d" ]
+    network_mode: host
+    # command:
+    #   [
+    #     "jupyter",
+    #     "lab",
+    #     "--port=9881",
+    #     "--allow-root",
+    #     "--no-browser",
+    #     "--ip=lumi"
+    #   ]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
