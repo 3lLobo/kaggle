@@ -38,7 +38,7 @@ class SQLDataLoader:
 
     # Get the number of point-clouds in the database.
     cur.execute('SELECT COUNT(*) FROM {}'.format(table_name))
-    self.n_pc = cur.fetchone()[0]
+    self.n_pc = cur.fetchone()[0] // pc_size
 
     self.select_columns = 'x, y, z, r, g, b, label'
     self.execute_select_random_ink =  lambda x: 'SELECT {} FROM {} WHERE label = 1 ORDER BY RANDOM() LIMIT {}'.format(self.select_columns, table_name, x)
