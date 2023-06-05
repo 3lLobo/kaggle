@@ -1,0 +1,6 @@
+vesuvius_challenge/.vscode/
+vesuvius_challenge/.ipynb_checkpoints/
+vesuvius_challenge/data
+
+vesuvius_challenge/pytorch3d
+vesuvius_challenge/torch-points3d

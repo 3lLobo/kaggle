@@ -1,0 +1,6 @@
+.vscode/
+.ipynb_checkpoints/
+data/
+
+pytoch3d/
+torch-points3d/
