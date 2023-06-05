@@ -49,11 +49,12 @@ class PointCloudData(Dataset):
         pointcloud = batch[:, :3]
         features = batch[:, 3:6]
         if not self.valid:
-            label = batch[:, 6]
+            label = batch[:, 6].reshape(-1, 1)
         else:
             label = np.zeros((pointcloud.shape[0], 1))
         pointcloud = self.__preproc__(pointcloud)
         pointcloud = np.concatenate((pointcloud, features), axis=1)
         pointcloud = self.toTensor(pointcloud)
+        label = self.toTensor(label)
 
         return pointcloud, label

@@ -80,28 +80,27 @@ class PointNet(nn.Module):
         super().__init__()
         self.k = features + 3
         self.transform = Transform(k=self.k)
-        # self.fc1 = nn.Linear(1024, 512)
-        # self.fc2 = nn.Linear(512, 256)
-        # self.fc3 = nn.Linear(256, classes)
         # Use transformer and out put a score for each point.
-        self.transformer = nn.TransformerEncoderLayer(d_model=1024, nhead=8)
+        self.transformer = nn.TransformerEncoderLayer(d_model=1024, nhead=16)
         
 
         # self.bn1 = nn.BatchNorm1d(512)
         # self.bn2 = nn.BatchNorm1d(256)
         # self.dropout = nn.Dropout(p=0.3)
-        self.logsoftmax = nn.LogSoftmax(dim=1) # Sigmoid ?
-
-        self.criterion = nn.NLLLoss()
-
-    def forward(self, input):
-        xb, matrix3x3, matrix64x64 = self.transform(input)
-        # xb = F.relu(self.bn1(self.fc1(xb)))
-        # xb = F.relu(self.bn2(self.dropout(self.fc2(xb))))
-        # output = self.fc3(xb)
-
+        # self.logsoftmax = nn.LogSoftmax(dim=1) # Sigmoid ?
         
-        return self.logsoftmax(output), matrix3x3, matrix64x64
+        # TODO: Loss for multi-point classification
+        self.criterion = nn.BCEWithLogitsLoss()
+
+    def forward(self, input_tensor):
+        xb, matrix3x3, matrix64x64 = self.transform(input_tensor)
+        
+        xb = xb.unsqueeze(0)
+        xb = self.transformer(xb)
+        xb = xb.squeeze(0)
+        output = xb
+        # TODO: Fix the output to be between 0 and 1.
+        return output, matrix3x3, matrix64x64
     
     def pointnetloss(self, outputs, labels, m3x3, m64x64, alpha = 0.0001):
         bs=outputs.size(0)
@@ -112,5 +111,10 @@ class PointNet(nn.Module):
             id64x64=id64x64.cuda()
         diff3x3 = id3x3-torch.bmm(m3x3,m3x3.transpose(1,2))
         diff64x64 = id64x64-torch.bmm(m64x64,m64x64.transpose(1,2))
-        return self.criterion(outputs, labels) + alpha * (torch.norm(diff3x3)+torch.norm(diff64x64)) / float(bs)
+        outputs = outputs.unsqueeze(2)
+        bcc_loss = self.criterion(outputs, labels)
+        conv_loss = alpha * (torch.norm(diff3x3)+torch.norm(diff64x64)) / float(bs)
+        full_loss = bcc_loss + conv_loss
+        return full_loss
+        # return self.criterion(outputs, labels) + alpha * (torch.norm(diff3x3)+torch.norm(diff64x64)) / float(bs)
     

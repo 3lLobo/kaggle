@@ -41,8 +41,8 @@ class SQLDataLoader:
     self.n_pc = cur.fetchone()[0]
 
     self.select_columns = 'x, y, z, r, g, b, label'
-    self.execute_select_random_ink =  lambda x: 'SELECT {} FROM {} WHERE label = 1 ORDER BY RANDOM() LIMIT {}'.format(self.select_columns, table_name, x//2)
-    self.execute_select_random_no_ink = lambda x: 'SELECT {} FROM {} WHERE label = 0 ORDER BY RANDOM() LIMIT {}'.format(self.select_columns, table_name, x//2)
+    self.execute_select_random_ink =  lambda x: 'SELECT {} FROM {} WHERE label = 1 ORDER BY RANDOM() LIMIT {}'.format(self.select_columns, table_name, x)
+    self.execute_select_random_no_ink = lambda x: 'SELECT {} FROM {} WHERE label = 0 ORDER BY RANDOM() LIMIT {}'.format(self.select_columns, table_name, x)
 
     # Parallel loading of batches.
     self.storage_factor = storage_factor

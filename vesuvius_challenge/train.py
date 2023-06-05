@@ -64,7 +64,7 @@ def main():
     train_set = PointCloudData('data/train/1/batches/', len_dataset=841345227, valid=False)
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=32)
     # val_loader = PointCloudData('data/test/1/batches/', batch_size=32)
-    train(pointnet, train_set, epochs=111, save=True)
+    train(pointnet, train_loader, epochs=111, save=True)
 
 
 if __name__ == '__main__':

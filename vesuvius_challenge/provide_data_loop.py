@@ -48,6 +48,6 @@ if __name__ == '__main__':
     batch_size = 1
     piece_id = 1
     data_type = 'train'
-    storage_factor = 100
-    threshold = 70
+    storage_factor = 3200
+    threshold = 1000
     provide_data_loop(db_path, pc_size, batch_size, piece_id, data_type, storage_factor, threshold)
