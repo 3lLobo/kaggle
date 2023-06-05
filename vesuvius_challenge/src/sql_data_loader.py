@@ -8,9 +8,8 @@ import threading
 from time import time, sleep
 
 
-# TODO: Size of point cloud is not equal to batch size!!!
 class SQLDataLoader:
-  def __init__(self, db_path: str, batch_size: int, piece_id: int, data_type: str, storage_factor: int = 10) -> None:
+  def __init__(self, db_path: str, pc_size:int, batch_size: int, piece_id: int, data_type: str, storage_factor: int = 10) -> None:
     """Initialize the class.
 
     Args:
@@ -19,7 +18,9 @@ class SQLDataLoader:
         piece_id (int): Id of the piece.
         data_type (str): Train or test.
     """
+
     self.db_path = db_path
+    self.pc_size = pc_size
     self.batch_size = batch_size
     self.piece_id = piece_id
     self.data_type = data_type
@@ -29,6 +30,8 @@ class SQLDataLoader:
     cur = con.cursor()
     self.con = con
     self.cur = cur
+    # assert batch-size times pc size are even
+    assert batch_size * pc_size % 2 == 0
 
     table_name = 'pc_{}_{}'.format(data_type, piece_id)
     self.table_name = table_name
@@ -57,15 +60,6 @@ class SQLDataLoader:
     cur.execute('SELECT COUNT(*) FROM {} WHERE label = 0'.format(table_name))
     n_no_ink = cur.fetchone()[0]
     self.ratio = n_ink / n_no_ink
-
-  def get_test_batch(self):
-    """Get a batch of point and return as numpy array.
-    """
-    cur = self.cur
-    columns_select = 'x, y, z, r, g, b'
-    cur.execute('SELECT {} FROM {} ORDER BY RANDOM() LIMIT {}'.format(columns_select, self.table_name, self.batch_size))
-    pc_batch = np.array(cur.fetchall())[:, 1:]
-    return pc_batch
   
   def get_balanced_batch(self, batch_size: int = None, cur: sqlite3.Cursor = None) -> np.array:
     """Return a balanced batch with equal number of ink and no-ink labels.
@@ -81,11 +75,18 @@ class SQLDataLoader:
 
     if cur is None:
       cur = self.cur
-    cur.execute(self.execute_select_random_no_ink(batch_size))
-    pc_batch_0 = np.array(cur.fetchall())[:, 1:]
-    cur.execute(self.execute_select_random_ink(batch_size))
-    pc_batch_1 = np.array(cur.fetchall())[:, 1:]
+
+    n_points = batch_size * self.pc_size // 2
+    cur.execute(self.execute_select_random_no_ink(n_points))
+    pc_batch_0 = np.array(cur.fetchall())
+    cur.execute(self.execute_select_random_ink(n_points))
+    pc_batch_1 = np.array(cur.fetchall())
     pc_batch = np.vstack((pc_batch_0, pc_batch_1))
+    np.random.shuffle(pc_batch)
+    # make batch size equal to batch_size.
+    print("SHAPE",pc_batch.shape)
+    pc_batch = pc_batch.reshape((batch_size, -1, 7))
+    print("SHAPE2",pc_batch.shape)
     return pc_batch  
 
   def store_batch(self):
@@ -132,7 +133,7 @@ class SQLDataLoader:
     return self.get_balanced_batch()
   
   def __len__(self):
-    return self.n_pc // (self.batch_size * self.ratio)
+    return int(self.n_pc // (self.batch_size * self.ratio))
   
   def __del__(self):
     self.con.close()
@@ -146,22 +147,27 @@ class SQLDataLoader:
 
 
 if __name__ == '__main__':
-  db_path = './data/vesuvius_pointcloud_int.db'
-  batch_size = 2000
+  db_path = './data/vesuvius_pointcloud.db'
+  batch_size = 16
+  pc_size = 200000
   piece_id = 1
   data_type = 'train'
 
-  dataloader = SQLDataLoader(db_path, batch_size, piece_id, data_type)
+  dataloader = SQLDataLoader(db_path, batch_size, pc_size, piece_id, data_type)
   print(dataloader.n_pc)
   print(dataloader.ratio)
   print(dataloader.n_ink)
 
   for i in tqdm.trange(100, colour='cyan'):
     # batch = dataloader.get_balanced_batch()
+    t_start = time()
     batch = dataloader.get_stored_batch()
     # tqdm.tqdm.write('{) , {}'.format(batch.shape[1], batch.dtype))
     print(batch.shape)
     print(batch.dtype)
-    mean = np.mean(batch[:, :3], axis=0)
+    mean = np.mean(batch[:,:, :3], axis=0)
+    mean = np.mean(mean, axis=0)
     tqdm.tqdm.write('{:.3f}, {:.3f}, {:.3f}'.format(mean[0], mean[1], mean[2]))
     tqdm.tqdm.write('-----------------')
+    if time() - t_start > 0.1:
+      sleep(0.5)

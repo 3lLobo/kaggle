@@ -47,8 +47,6 @@ class ToTensor(object):
 
 def default_transforms():
     return transforms.Compose([
-        # TODO: Write point smapler for sql database
-                                PointSampler(1024),
                                 Normalize(),
-                                ToTensor()
+                                # ToTensor()
                               ])

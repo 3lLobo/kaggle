@@ -76,31 +76,34 @@ class Transform(nn.Module):
         return output, matrix3x3, matrix64x64
 
 class PointNet(nn.Module):
-    def __init__(self, classes = 2, features = 3):
+    def __init__(self, classes = 2, features = 3, n_points = 1024):
         super().__init__()
         self.k = features + 3
         self.transform = Transform(k=self.k)
-        self.fc1 = nn.Linear(1024, 512)
-        self.fc2 = nn.Linear(512, 256)
-        self.fc3 = nn.Linear(256, classes)
+        # self.fc1 = nn.Linear(1024, 512)
+        # self.fc2 = nn.Linear(512, 256)
+        # self.fc3 = nn.Linear(256, classes)
+        # Use transformer and out put a score for each point.
+        self.transformer = nn.TransformerEncoderLayer(d_model=1024, nhead=8)
         
 
-        self.bn1 = nn.BatchNorm1d(512)
-        self.bn2 = nn.BatchNorm1d(256)
-        self.dropout = nn.Dropout(p=0.3)
+        # self.bn1 = nn.BatchNorm1d(512)
+        # self.bn2 = nn.BatchNorm1d(256)
+        # self.dropout = nn.Dropout(p=0.3)
         self.logsoftmax = nn.LogSoftmax(dim=1) # Sigmoid ?
 
         self.criterion = nn.NLLLoss()
 
     def forward(self, input):
         xb, matrix3x3, matrix64x64 = self.transform(input)
-        xb = F.relu(self.bn1(self.fc1(xb)))
-        xb = F.relu(self.bn2(self.dropout(self.fc2(xb))))
-        output = self.fc3(xb)
+        # xb = F.relu(self.bn1(self.fc1(xb)))
+        # xb = F.relu(self.bn2(self.dropout(self.fc2(xb))))
+        # output = self.fc3(xb)
+
+        
         return self.logsoftmax(output), matrix3x3, matrix64x64
     
     def pointnetloss(self, outputs, labels, m3x3, m64x64, alpha = 0.0001):
-        
         bs=outputs.size(0)
         id3x3 = torch.eye(self.k, requires_grad=True).repeat(bs,1,1)
         id64x64 = torch.eye(64, requires_grad=True).repeat(bs,1,1)
