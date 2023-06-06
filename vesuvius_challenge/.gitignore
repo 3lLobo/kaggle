@@ -2,5 +2,5 @@
 .ipynb_checkpoints/
 data/
 
-pytoch3d/
+pytorch3d/
 torch-points3d/

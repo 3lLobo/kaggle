@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "kaggle"
+version = "0.1.0"
+description = ""
+authors = ["3lLobo <flocwolf@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+torch = "^2.0.1"
+pandas = "^2.0.2"
+tqdm = "^4.65.0"
+open3d = "^0.17.0"
+opencv-python = "^4.7.0.72"
+matplotlib = "^3.7.1"
+scikit-learn = "^1.2.2"
+pyyaml = "^6.0"
+addict = "^2.4.0"
+cupy-cuda12x = "^12.1.0"
+numba = "^0.57.0"
+cuda-python = "^12.1.0"
+tensorboard = "^2.13.0"
+
+
+[tool.poetry.group.dev.dependencies]
+ipykernel = "^6.23.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
