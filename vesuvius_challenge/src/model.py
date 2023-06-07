@@ -101,9 +101,9 @@ class PointNet(nn.Module):
     def forward(self, input_tensor):
         xb, matrix3x3, matrix64x64 = self.transform(input_tensor)
         
-        xb = xb.unsqueeze(0)
-        xb = self.transformer(xb)
-        xb = xb.squeeze(0)
+        # xb = xb.unsqueeze(0)
+        # xb = self.transformer(xb)
+        # xb = xb.squeeze(0)
         output = xb
         return output, matrix3x3, matrix64x64
     

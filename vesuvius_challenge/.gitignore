@@ -6,3 +6,8 @@ models/
 
 pytorch3d/
 torch-points3d/
+torch_points3d/
+
+kibana/
+runs/
+torch-points-kernels/
