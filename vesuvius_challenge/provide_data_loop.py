@@ -44,10 +44,12 @@ def provide_data_loop(db_path: str, pc_size:int, batch_size: int, piece_id: int,
 
 if __name__ == '__main__':
     db_path = 'data/vesuvius_pointcloud.db'
+    # pc_size = 64_000
     pc_size = 1024
     batch_size = 1
     piece_id = 1
     data_type = 'train'
-    storage_factor = 3200
+    storage_factor = 32
     threshold = 1000
+
     provide_data_loop(db_path, pc_size, batch_size, piece_id, data_type, storage_factor, threshold)

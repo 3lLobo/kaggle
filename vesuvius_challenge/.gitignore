@@ -1,6 +1,8 @@
 .vscode/
 .ipynb_checkpoints/
 data/
+images/
+models/
 
 pytorch3d/
 torch-points3d/
