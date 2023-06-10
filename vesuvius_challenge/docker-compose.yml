@@ -1,26 +1,68 @@
 version: "3.9"
 
+networks:
+  elastic:
+    driver: bridge
+  # volumes:
+  #   elasticdataVol:
+  #     driver: local
+  #   elasticlogsVol:
+  #     driver: local
+
 services:
-  open3dml:
-    image: 3llobo/open3dml:latest
-    container_name: open3dml
+  #   elasticsearch:
+
+  #     image: 'docker.elastic.co/elasticsearch/elasticsearch:${ELASTIC_VERSION}'
+  #     container_name: es17
+  #     restart: unless-stopped
+  #     ports:
+  #       - '9200:9200'
+  #     networks:
+  #       - elastic
+  #     environment:
+  #       - http.host=0.0.0.0
+  #       - network.host=0.0.0.0
+  #       - discovery.type=single-node
+  #       - cluster.name=es11
+  #       - script.allowed_types= inline
+  #       - thread_pool.search.queue_size=100000
+  #       - thread_pool.write.queue_size=10000
+  #       # - gateway.recover_after_data_nodes=1
+  #       - xpack.security.enabled=false
+  #       # - xpack.monitoring.enabled=false
+  #       - bootstrap.memory_lock=true
+  #       - 'ES_JAVA_OPTS=-Xms256m -Xmx256m'
+  #     ulimits:
+  #       nofile:
+  #         soft: 65536
+  #         hard: 65536
+  #     # volumes:
+  #     #   - elasticdataVol:/usr/share/elasticsearch/data
+  #     #   - elasticlogsVol:/usr/share/elasticsearch/logs
+
+  #   kibana:
+  #     container_name: kibana
+  #     restart: unless-stopped
+  #     image: 'docker.elastic.co/kibana/kibana:${ELASTIC_VERSION}'
+  #     volumes:
+  #       - ./kibana/kibana.yml:/usr/share/kibana/config/kibana.yml:ro
+  #     ports:
+  #       - 5601:5601
+  #     depends_on:
+  #       - elasticsearch
+  #     networks:
+  #       - elastic
+
+  torch3d:
+    image: 3llobo/torch3dfinal:latest
+    container_name: torch3d
     ports:
       - 9881:9881
+      - 8888:8888
     volumes:
-      - ../kaggle:/app:rw
+      - ./:/app:rw
     # GPU support
-    # command: [ "python3", "--version" ]
-    # command: [ "python3", "-c", "import open3d.ml.torch as ml3d" ]
-    network_mode: host
-    # command:
-    #   [
-    #     "jupyter",
-    #     "lab",
-    #     "--port=9881",
-    #     "--allow-root",
-    #     "--no-browser",
-    #     "--ip=lumi"
-    #   ]
+    entrypoint: [ "tail", "-f", "/dev/null" ]
     deploy:
       resources:
         reservations:
@@ -28,3 +70,30 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [ gpu ]
+    # open3dml:
+    #   image: 3llobo/open3dml:latest
+    #   container_name: open3dml
+    #   ports:
+    #     - 9881:9881
+    #   volumes:
+    #     - ../kaggle:/app:rw
+    #   # GPU support
+    #   # command: [ "python3", "--version" ]
+    #   # command: [ "python3", "-c", "import open3d.ml.torch as ml3d" ]
+    #   network_mode: host
+    #   # command:
+    #   #   [
+    #   #     "jupyter",
+    #   #     "lab",
+    #   #     "--port=9881",
+    #   #     "--allow-root",
+    #   #     "--no-browser",
+    #   #     "--ip=lumi"
+    #   #   ]
+    #   deploy:
+    #     resources:
+    #       reservations:
+    #         devices:
+    #           - driver: nvidia
+    #             count: 1
+    #             capabilities: [ gpu ]

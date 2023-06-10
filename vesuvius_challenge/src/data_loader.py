@@ -6,6 +6,8 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from src.transforms import default_transforms, ToTensor
 from time import sleep
+from torch_geometric.data import Batch, Data
+
 
 class PointCloudData(Dataset):
     def __init__(self, batch_dir, n_points, len_dataset, n_skip_rm, valid=False, transform=default_transforms()):
@@ -45,9 +47,10 @@ class PointCloudData(Dataset):
             batch = self.storage.pop()
 
         else:
-            while len(self.batch_files) == 0:
-                sleep(.1)
-                self.batch_files = self.get_batch_files()
+            if len(self.batch_files) == 0:
+                while len(self.batch_files) == 0:
+                    sleep(.1)
+                    self.batch_files = self.get_batch_files()
 
             # Load pointcloud
             batch_file = self.batch_files.pop()
@@ -62,18 +65,32 @@ class PointCloudData(Dataset):
             m_batch = np.split(batch[:-n_excess, :], batch.shape[0] // self.n_points)
             batch = m_batch.pop()
             self.storage.extend(m_batch)
+        if batch.shape[0] < self.n_points:
+            n_missing = self.n_points - batch.shape[0]
+            add_batch = self.__getitem__(idx)
+            add_batch = add_batch[:n_missing, :]
+            batch = np.concatenate((batch, add_batch), axis=0)
 
         # Split into pointcloud, features and label
         pointcloud = batch[:, :3]
-        original_xy = pointcloud[:, :2]
+        # original_xy = pointcloud[:, :2]
         features = batch[:, 3:6]
         if not self.valid:
-            label = batch[:, 6].reshape(-1, 1)
+            label = batch[:, 6].reshape(1, -1)
         else:
-            label = np.zeros((pointcloud.shape[0], 1))
+            label = np.zeros((1, pointcloud.shape[0]))
         pointcloud = self.__preproc__(pointcloud)
-        pointcloud = np.concatenate((pointcloud, features), axis=1)
-        # pointcloud = self.toTensor(pointcloud)
+        # pointcloud = np.concatenate((pointcloud, features), axis=1)
+        pointcloud = self.toTensor(pointcloud).unsqueeze(0)
         # label = self.toTensor(label)
+        features = self.toTensor(features).unsqueeze(0)
+        label = self.toTensor(label).unsqueeze(0)
+        data = Data(pos=pointcloud, x=features, y=label)
 
-        return pointcloud, label, original_xy
+        return data
+    
+    def get_batch(self, n_pcs):
+        batch = []
+        for i in range(n_pcs):
+            batch.append(self.__getitem__(i))
+        return Batch.from_data_list(batch)

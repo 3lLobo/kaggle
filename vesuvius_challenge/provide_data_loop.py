@@ -27,9 +27,9 @@ def provide_data_loop(db_path: str, pc_size:int, batch_size: int, piece_id: int,
     batch_folder = 'data/{}/{}/batches/'.format(data_type, piece_id)
     if not os.path.exists(batch_folder):
         os.makedirs(batch_folder)
-    else:
-        for file in os.listdir(batch_folder):
-            os.remove(batch_folder + file)
+    # else:
+    #     for file in os.listdir(batch_folder):
+    #         os.remove(batch_folder + file)
 
     for i in tqdm.trange(n_batches, colour='cyan'):
         n_files = len(os.listdir(batch_folder))

@@ -42,7 +42,7 @@ class ToTensor(object):
     def __call__(self, pointcloud):
         assert len(pointcloud.shape)==2
 
-        return torch.from_numpy(pointcloud)
+        return torch.from_numpy(pointcloud).float()
     
 
 def default_transforms():

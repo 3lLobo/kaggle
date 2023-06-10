@@ -21,6 +21,9 @@ numba = "^0.57.0"
 cuda-python = "^12.1.0"
 tensorboard = "^2.13.0"
 torcheval-nightly = "^2023.5.3"
+torch-tb-profiler = "^0.4.1"
+torch-geometric = "^2.3.1"
+omegaconf = "^2.3.0"
 
 
 [tool.poetry.group.dev.dependencies]
