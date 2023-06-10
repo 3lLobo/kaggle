@@ -1,0 +1,19 @@
+version: "3.9"
+
+services:
+  torch3d:
+    image: 3llobo/devtorch3d:latest
+    container_name: devtorch3d
+    ports:
+      - 8888:8888
+    volumes:
+      - ./vesuvius_challenge:/app:rw
+    # GPU support
+    entrypoint: [ "tail", "-f", "/dev/null" ]
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [ gpu ]

@@ -79,7 +79,7 @@ class PointCloudDB:
         self.data_type = data_type
 
         self.table_name = 'pc_{}_{}'.format(data_type, piece_id)
-        self.db_name = './data/vesuvius_pointcloud_int.db'
+        self.db_name = './data/vesuvius_pointcloud_pc{}.db'.format(piece_id)
         self.con = sqlite3.connect(self.db_name)
         self.cur = self.con.cursor()
         self.sql_create = 'CREATE TABLE IF NOT EXISTS {} (x REAL NOT NULL, y REAL NOT NULL, z REAL NOT NULL, r REAL NOT NULL, g REAL NOT NULL, b REAL NOT NULL, label INTEGER NOT NULL)'.format(self.table_name)
@@ -168,47 +168,11 @@ class PointCloudDB:
         # return img_stack
 
 
-# def get_db(piece_id: int, data_type: str= 'train') -> sqlite3.Connection:
-#     """Get database connection.
-#     Create the db if necessary.
-
-#     Args:
-#         piece_id (int): The piece id.
-#         data_type (_type_): The data type.
-
-#     Returns:
-#         sqlite3.Connection: Connection to the database.
-#     """
-#     db_name = './data/vesuvius_pointcloud.db'
-#     con = sqlite3.connect(db_name)
-#     cur = con.cursor()
-#     #  Create tables if they don't exist
-#     table_name = 'pc_{}_{}'.format(data_type, piece_id)
-#     cur.execute('CREATE TABLE IF NOT EXISTS {} (id INTEGER PRIMARY KEY AUTOINCREMENT, x REAL NOT NULL, y REAL NOT NULL, z REAL NOT NULL, r REAL NOT NULL, g REAL NOT NULL, b REAL NOT NULL, label INTEGER NOT NULL);'.format(table_name))
-#     return con
-    
-
-# def insert_point_db(con: sqlite3.Connection, xyz: np.ndarray, rgb: np.ndarray, piece_id: int, data_type: str= 'train') -> None:
-#     """Insert point cloud into database.
-
-#     Args:
-#         con (sqlite3.Connection): Connection to the database.
-#         xyz (np.ndarray): 3d coordinates.
-#         rgb (np.ndarray): RGB values.
-#         piece_id (int): The piece id.
-#         data_type (_type_): The data type.
-#     """
-#     table_name = 'pc_{}_{}'.format(data_type, piece_id)
-#     cur = con.cursor()
-#     for i in tqdm.tqdm(range(xyz.shape[0]), colour='cyan'):
-#         cur.execute('INSERT INTO {} (x, y, z, r, g, b, label) VALUES (?, ?, ?, ?, ?, ?, ?);'.format(table_name), (xyz[i, 0], xyz[i, 1], xyz[i, 2], rgb[i, 0], rgb[i, 1], rgb[i, 2], 0))
-#     con.commit()
-
 
 if __name__ == '__main__':
     
     data_type = 'train'
-    for piece_id in tqdm.trange(1,4, colour='red'):
+    for piece_id in tqdm.trange(2,4, colour='red'):
         img_path = './data/{}/{}/surface_volume/'.format(data_type, piece_id)
         img_nlist = get_img_list(img_path)
 
