@@ -1,17 +1,18 @@
 import torch
 # from src.model import PointNet
-from src.data_loader import PointCloudData
-from tqdm import trange
-import tqdm
+from src.data_loader import PointCloudDataV2
+from tqdm import trange, tqdm
+
 import numpy as np
 import os
 import sys
-from src.transforms import Normalize, RandomNoise, RandRotation_z
+from src.transforms import Normalize, RandomNoise, RandRotation_z, ToTensor
 # from torchvision import transforms
 from torch.utils.tensorboard import SummaryWriter
 import torch
+# from torch.utils.data import DataLoader
 from torch_points3d.applications.pointnet2 import PointNet2
-from torch_geometric.data import Batch, Data
+from torch_geometric.data import Batch, Data, DataLoader
 from sklearn.metrics import accuracy_score, f1_score
 from torch.nn import BCEWithLogitsLoss
 
@@ -37,7 +38,7 @@ def get_metrics(data, res):
     return accuracy, f1
 
 
-def train(model, train_loader, val_loader=None,  epochs=15, save=True):
+def train(model, train_loader, val_loader,  epochs=15, save=True):
     writer = SummaryWriter()
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
     criterion = BCEWithLogitsLoss()
@@ -45,11 +46,13 @@ def train(model, train_loader, val_loader=None,  epochs=15, save=True):
     for epoch in trange(epochs, colour='red'):
         model.train()
         running_loss = 0.0
-        for i in trange(len(train_loader), colour='green'):
-            data =  train_loader.get_batch(BATCH_SIZE)
+        i = 0
+        for data in tqdm(train_loader, colour='green'):
+            i += 1
 
             optimizer.zero_grad()
             res = model(data)
+            
             
             loss = criterion(res.x, data.y)
             loss.backward()
@@ -58,7 +61,7 @@ def train(model, train_loader, val_loader=None,  epochs=15, save=True):
             # print statistics
             running_loss += loss.item()
 
-            if i % 10 == 9:    # print every 10 mini-batches
+            if i % 10 == 0:
                     accuracy, f1 = get_metrics(data, res)
                     writer.add_scalar('Loss/train', running_loss / 10, epoch * len(train_loader) + i)
                     writer.add_scalar('Accuracy/train', accuracy, epoch * len(train_loader) + i)
@@ -70,24 +73,21 @@ def train(model, train_loader, val_loader=None,  epochs=15, save=True):
         accs = f1s = total = losses = 0
 
         # validation
-        if val_loader:
-            train_loader.set_test_mode(True)
-            with torch.no_grad():
-                for i in trange(len(train_loader), colour='yellow'):
-                    data =  train_loader.get_batch(BATCH_SIZE)
-                    res = model(data)
-                    loss = criterion(res.x, data.y)
+        with torch.no_grad():
+            for data in tqdm(val_loader, colour='blue'):
+                res = model(data)
+                loss = criterion(res.x, data.y)
 
-                    accuracy, f1 = get_metrics(data, res)
-                    accs += accuracy
-                    f1s += f1
-                    losses += loss.item()
-                    total += data.y.size(-1)
-            writer.add_scalar('Accuracy/val', 100. * accs / total, epoch)
-            writer.add_scalar('F1/val', 100. * f1s / total, epoch)
-            writer.add_scalar('Loss/val', losses / total, epoch)
-            
-            train_loader.set_test_mode(False)
+                accuracy, f1 = get_metrics(data, res)
+                accs += accuracy
+                f1s += f1
+                losses += loss.item()
+                total += data.y.size(-1)
+
+        writer.add_scalar('Accuracy/val', 100. * accs / total, epoch)
+        writer.add_scalar('F1/val', 100. * f1s / total, epoch)
+        writer.add_scalar('Loss/val', losses / total, epoch)
+        
 
         # if epoch % 10 == 9:
           # save the model
@@ -101,20 +101,11 @@ def train(model, train_loader, val_loader=None,  epochs=15, save=True):
 
 def main():
     """Main trainings loop."""
-
-    rec_default = sys.getrecursionlimit()
-    print('Default recursion limit: ', rec_default)
-
     
-    n_batches = 969
-    pc_factor = 1
-    n_points = 1024 * pc_factor
+    n_points = 640_000
 
-    sys.setrecursionlimit(rec_default * 100)
-
-    batch_size = 311
-    n_skip_rm = 10000000000000000
-
+    batch_dir = 'data/pointclouds/train/'
+    batch_size = 3
     epochs = 100
 
     num_classes = 1
@@ -124,11 +115,16 @@ def main():
 
     pointnet.to(device)
 
+    loader_kwargs = {}
+    loader_kwargs = {'num_workers': 1, 'pin_memory': True}
 
-    train_set = PointCloudData('data/train/1/batches/', len_dataset=n_batches, valid=True, n_points=n_points, n_skip_rm=n_skip_rm)
-    # train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size)
-    # val_loader = PointCloudData('data/test/1/batches/', batch_size=32)
-    train(pointnet, train_set, epochs=epochs, save=True, val_loader=True)
+    data_set = PointCloudDataV2(batch_dir, n_points, do_transform=True, transform=[ToTensor()], is_unify=True)
+    print("Lenght dataset: ", len(data_set))
+    train_set, val_set = torch.utils.data.random_split(data_set, [int(0.8 * len(data_set)), len(data_set) - int(0.8 * len(data_set))])
+    train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True, **loader_kwargs)
+    val_loader = DataLoader(val_set, batch_size=batch_size, shuffle=True, **loader_kwargs)
+
+    train(pointnet, train_loader, epochs=epochs, save=True, val_loader=val_loader)
 
 
 if __name__ == '__main__':
