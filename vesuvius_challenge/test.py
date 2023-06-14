@@ -91,6 +91,18 @@ def main():
 
     pointnet = PointNet2(architecture="unet", input_nc=input_nc, num_layers=3, output_nc=num_classes)
 
+    # Load previous checkpoint
+    model_files = os.listdir('models/')
+    model_files = [x for x in model_files if 'save_p2_' in x]
+
+    if len(model_files) > 0:
+        model_files.sort()
+        model_files_idx = [int(x.split('_')[-1].split('.')[0]) for x in model_files]
+        max_idx = np.argmax(model_files_idx)
+        latest_model = model_files[max_idx]
+        print("Loading model params from: ", latest_model)
+        pointnet.load_state_dict(torch.load('models/'+latest_model))
+
     pointnet.to(device)
 
     loader_kwargs = {}
