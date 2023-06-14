@@ -70,6 +70,7 @@ class PointCloudDataV2(Dataset):
         pointcloud = np.load(file_path)
         if self.is_unify:
             pointcloud = self.unify_num_points(pointcloud)
+
         labels = self.get_labels(file_path, pointcloud[:, :2])
 
         xyz = pointcloud[:, :3]
@@ -122,7 +123,8 @@ class PointCloudDataV2(Dataset):
         Returns:
             np.ndarray: Labels for the points.
         """
-        # TODO: faster in torch or cupy?
+        if self.is_test:
+            return xy
         pc_idx = int(file_path.split('_')[-2]) - 1
         labels = self.labels[pc_idx]
         labels = labels[xy[:, 0], xy[:, 1]]
