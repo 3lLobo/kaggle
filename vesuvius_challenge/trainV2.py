@@ -13,7 +13,7 @@ import torch
 # from torch.utils.data import DataLoader
 from torch_points3d.applications.pointnet2 import PointNet2
 from torch_geometric.data import Batch, Data, DataLoader
-from sklearn.metrics import accuracy_score, f1_score
+from sklearn.metrics import accuracy_score, f1_score, fbeta_score
 from torch.nn import BCEWithLogitsLoss
 
 BATCH_SIZE = 2
@@ -33,7 +33,8 @@ def get_metrics(data, res):
     predicted = np.round(predicted)
 
     accuracy = accuracy_score(target, predicted)
-    f1 = f1_score(target, predicted, average='macro')
+    # f1 = f1_score(target, predicted, average='macro')
+    f1 = fbeta_score(target, predicted, beta=0.5, average='macro')
 
     return accuracy, f1
 
@@ -82,7 +83,7 @@ def train(model, train_loader, val_loader,  epochs=15, save=True):
                 accs += accuracy
                 f1s += f1
                 losses += loss.item()
-                total += data.y.size(-1)
+                total += 1
 
         writer.add_scalar('Accuracy/val', 100. * accs / total, epoch)
         writer.add_scalar('F1/val', 100. * f1s / total, epoch)
