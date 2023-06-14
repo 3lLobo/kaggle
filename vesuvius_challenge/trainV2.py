@@ -82,7 +82,7 @@ def train(model, train_loader, val_loader,  epochs=15, save=True):
                 accs += accuracy
                 f1s += f1
                 losses += loss.item()
-                total += data.y.size(-1)
+                total += 1
 
         writer.add_scalar('Accuracy/val', 100. * accs / total, epoch)
         writer.add_scalar('F1/val', 100. * f1s / total, epoch)
