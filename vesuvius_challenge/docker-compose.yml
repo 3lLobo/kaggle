@@ -56,6 +56,7 @@ services:
   torch3d:
     image: 3llobo/torch3dfinal:latest
     container_name: torch3d
+    restart: unless-stopped
     ports:
       - 9881:9881
       - 8888:8888

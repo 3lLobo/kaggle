@@ -23,7 +23,7 @@ class RandRotation_z(object):
         theta = random.random() * 2. * math.pi
         rot_matrix = np.array([[ math.cos(theta), -math.sin(theta),    0],
                                [ math.sin(theta),  math.cos(theta),    0],
-                               [0,                             0,      1]])
+                               [0,                            0,      1]])
         
         rot_pointcloud = rot_matrix.dot(pointcloud.T).T
         return  rot_pointcloud
@@ -40,7 +40,7 @@ class RandomNoise(object):
 
 class ToTensor(object):
     def __call__(self, pointcloud):
-        assert len(pointcloud.shape)==2
+        # assert len(pointcloud.shape)==2
 
         return torch.from_numpy(pointcloud).float()
     
@@ -48,5 +48,5 @@ class ToTensor(object):
 def default_transforms():
     return transforms.Compose([
                                 Normalize(),
-                                # ToTensor()
+                                ToTensor()
                               ])
