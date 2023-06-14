@@ -19,6 +19,8 @@ from torch.nn import BCEWithLogitsLoss
 from torch_sparse import SparseTensor
 
 IMG_SIZE = (8181, 6330)
+PIECE_ID = 'a'
+
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print('Using device:', device)
@@ -27,6 +29,7 @@ print('Using device:', device)
 
 def test(model, test_loader, img_path, batch_size):
     writer = SummaryWriter()
+    prediction = np.zeros(IMG_SIZE)
 
     model.eval()
     i = 0
@@ -38,34 +41,38 @@ def test(model, test_loader, img_path, batch_size):
         
         # For each batch?
         for j in range(batch_size):
-            sparse_tensor = SparseTensor(row=xy[:, 0], col=xy[:, 1], value=res.x, sparse_sizes=IMG_SIZE)
+            sparse_tensor = SparseTensor(row=xy[i,:, 0], col=xy[i,:, 1], value=res[i], sparse_sizes=IMG_SIZE)
             # save as image
             img = sparse_tensor.to_dense()
             img = img.cpu().detach().numpy()
             img = img.reshape(IMG_SIZE)
-            i_img = i * batch_size + j
-            np.save(img_path + 'img_{}.npy'.format(i_img), img)
+            # i_img = i * batch_size + j
+            # np.save(img_path + 'img_{}.npy'.format(i_img), img)
+            prediction += img
             
 
         if i % 10 == 0:
                 #  add an image to tensorboard
+                steps = i * batch_size
+                img = prediction / steps
                 img = img * 255
                 writer.add_image('image', img, i)
 
 
     # Create final prediction image
-    img_files = os.listdir(img_path)
-    prediction = np.zeros(IMG_SIZE)
-    for img_file in img_files:
-        img = np.load(img_path + img_file)
-        prediction += img
-    prediction = prediction / len(img_files)
+    # img_files = os.listdir(img_path)
+    # img_files = [f for f in img_files if f.endswith('.npy')]
+    # for img_file in img_files:
+    #     img = np.load(img_path + img_file)
+    #     prediction += img
+    total_steps = i * batch_size
+    prediction = prediction / total_steps
     np.save(img_path + 'prediction.npy', prediction)
 
     # Create final prediction csv
     starts_ix, lengths = rle(prediction)
     inklabels_rle = " ".join(map(str, sum(zip(starts_ix, lengths), ())))
-    print("Id,Predicted\n1," + inklabels_rle, file=open(img_path + 'inklabels_rle.csv', 'w'))
+    print(f"Id,Predicted\n{PIECE_ID}," + inklabels_rle, file=open(img_path + 'inklabels_rle.csv', 'w'))
 
 
 
@@ -74,9 +81,8 @@ def main():
     
     n_points = 640_000
 
-    piece_id = 'a'
-    batch_dir = 'data/pointclouds/test/{}/'.format(piece_id)
-    img_path = 'data/pointclouds/test/{}/pred_img/'.format(piece_id)
+    batch_dir = 'data/pointclouds/test/{}/'.format(PIECE_ID)
+    img_path = 'data/pointclouds/test/{}/pred_img/'.format(PIECE_ID)
     batch_size = 3
     epochs = 100
 
