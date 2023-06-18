@@ -15,12 +15,14 @@ import torch
 from torch_points3d.applications.pointnet2 import PointNet2
 from torch_geometric.data import Batch, Data, DataLoader
 from sklearn.metrics import accuracy_score, f1_score
-from torch.nn import BCEWithLogitsLoss
+from torch.nn import BCEWithLogitsLoss, Softmax, Sigmoid
 from torch_sparse import SparseTensor
 
-IMG_SIZE = (8181, 6330)
-PIECE_ID = 'a'
+# IMG_SIZE = (2727, 6330)
+# PIECE_ID = 'a'
 
+IMG_SIZE = (5454, 6330)
+PIECE_ID = 'b'
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print('Using device:', device)
@@ -30,33 +32,39 @@ print('Using device:', device)
 def test(model, test_loader, img_path, batch_size):
     writer = SummaryWriter()
     prediction = np.zeros(IMG_SIZE)
+    prediction = torch.from_numpy(prediction)
+
+    sofmax = Softmax(dim=1)
+    sigmoid = Sigmoid()
 
     model.eval()
     i = 0
     for data in tqdm(test_loader, colour='green'):
-        i += 1
         res = model(data)
 
         xy = data.y
         
         # For each batch?
-        for j in range(batch_size):
-            sparse_tensor = SparseTensor(row=xy[i,:, 0], col=xy[i,:, 1], value=res[i], sparse_sizes=IMG_SIZE)
+        for j in range(res.x.shape[0]):
+            i += 1
+            values = sigmoid(res.x[j]).squeeze()
+            sparse_tensor = SparseTensor(row=xy[j,:, 0], col=xy[j,:, 1], value=values, sparse_sizes=IMG_SIZE)
             # save as image
             img = sparse_tensor.to_dense()
-            img = img.cpu().detach().numpy()
-            img = img.reshape(IMG_SIZE)
+            img = img.cpu().detach()
+            img = img.view(IMG_SIZE)
             # i_img = i * batch_size + j
             # np.save(img_path + 'img_{}.npy'.format(i_img), img)
             prediction += img
             
 
-        if i % 10 == 0:
+        if i % 30 == 0:
                 #  add an image to tensorboard
-                steps = i * batch_size
-                img = prediction / steps
+                # steps = i * batch_size
+                # img = prediction / steps
+                img = sigmoid(prediction).squeeze()
                 img = img * 255
-                writer.add_image('image', img, i)
+                writer.add_image('image', img, i, dataformats='HW')
 
 
     # Create final prediction image
@@ -65,8 +73,9 @@ def test(model, test_loader, img_path, batch_size):
     # for img_file in img_files:
     #     img = np.load(img_path + img_file)
     #     prediction += img
-    total_steps = i * batch_size
-    prediction = prediction / total_steps
+    total_steps = i     
+    print('Total steps: ', total_steps)
+    prediction = prediction.numpy()
     np.save(img_path + 'prediction.npy', prediction)
 
     # Create final prediction csv
@@ -83,8 +92,9 @@ def main():
 
     batch_dir = 'data/pointclouds/test/{}/'.format(PIECE_ID)
     img_path = 'data/pointclouds/test/{}/pred_img/'.format(PIECE_ID)
-    batch_size = 3
-    epochs = 100
+    os.makedirs(img_path, exist_ok=True)
+
+    batch_size = 2
 
     num_classes = 1
     input_nc = 3
@@ -105,7 +115,7 @@ def main():
 
     pointnet.to(device)
 
-    loader_kwargs = {}
+    # loader_kwargs = {}
     loader_kwargs = {'num_workers': 1, 'pin_memory': True}
 
     data_set = PointCloudDataV2(batch_dir, n_points, do_transform=True, transform=[ToTensor()], is_unify=True, is_test=True)

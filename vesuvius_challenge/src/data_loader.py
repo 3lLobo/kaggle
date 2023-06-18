@@ -85,7 +85,8 @@ class PointCloudDataV2(Dataset):
 
         # xyz = SparseTensor.from_dense(xyz)
 
-        labels = torch.tensor(labels, dtype=torch.float64).unsqueeze(0)
+        label_dtype = torch.long if self.is_test else torch.float
+        labels = torch.tensor(labels, dtype=label_dtype).unsqueeze(0)
 
         data = Data(pos=xyz, x=rgb, y=labels)
 
