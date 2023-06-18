@@ -1,5 +1,5 @@
 import cv2
 import numpy as np
 
-img = np.load('data/test/a/mask.png')
+img = cv2.imread('data/test/b/mask.png')
 print(img.shape)

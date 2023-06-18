@@ -39,12 +39,12 @@ def get_metrics(data, res):
     return accuracy, f1
 
 
-def train(model, train_loader, val_loader,  epochs=15, save=True):
+def train(model, train_loader, val_loader,  epochs=15, save=True, start_epoch=0):
     writer = SummaryWriter()
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
     criterion = BCEWithLogitsLoss()
 
-    for epoch in trange(epochs, colour='red'):
+    for epoch in trange(start_epoch, epochs, colour='red'):
         model.train()
         running_loss = 0.0
         i = 0
@@ -102,12 +102,16 @@ def train(model, train_loader, val_loader,  epochs=15, save=True):
 
 def main():
     """Main trainings loop."""
+
+    # random seed
+    torch.manual_seed(11)
     
     n_points = 640_000
 
     batch_dir = 'data/pointclouds/train/'
     batch_size = 3
     epochs = 100
+    start_epoch = 0
 
     num_classes = 1
     input_nc = 3
@@ -125,6 +129,7 @@ def main():
         latest_model = model_files[max_idx]
         print("Loading model params from: ", latest_model)
         pointnet.load_state_dict(torch.load('models/'+latest_model))
+        start_epoch = model_files_idx[max_idx] + 1
 
     pointnet.to(device)
 
@@ -137,7 +142,7 @@ def main():
     train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True, **loader_kwargs)
     val_loader = DataLoader(val_set, batch_size=batch_size, shuffle=True, **loader_kwargs)
 
-    train(pointnet, train_loader, epochs=epochs, save=True, val_loader=val_loader)
+    train(pointnet, train_loader, epochs=epochs, save=True, val_loader=val_loader, start_epoch=start_epoch)
 
 
 if __name__ == '__main__':

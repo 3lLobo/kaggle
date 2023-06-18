@@ -1,0 +1,64 @@
+FROM nvidia/cuda:11.7.1-cudnn8-devel-ubuntu20.04
+# FROM nvidia/cuda:11.6.2-cudnn8-runtime-ubuntu20.04
+
+RUN apt-get update
+RUN DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get install -y --no-install-recommends software-properties-common python3-dev python3-pip python3-venv libopenblas-dev
+
+RUN python3 -m venv /venv
+ENV PATH=/venv/bin:$PATH
+
+ENV FORCE_CUDA=1
+
+COPY docker/install_system.sh install_system.sh
+RUN bash install_system.sh
+
+RUN pip3 install setuptools tqdm scikit-learn
+# RUN pip3 install --upgrade pip
+RUN pip3 install torch torchvision torchaudio 
+# --index-url https://download.pytorch.org/whl/cu116
+
+ENV TORCH_CUDA_ARCH_LIST="8.0 8.6"
+ENV TORCH_NVCC_FLAGS="-Xfatbin -compress-all"
+ENV PATH=/usr/local/cuda/bin:$PATH
+ENV CPATH=/usr/local/cuda/include:$CPATH
+ENV LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
+ENV C_INCLUDE_PATH=/usr/local/cuda/include:$C_INCLUDE_PATH
+ENV CPLUS_INCLUDE_PATH=/usr/local/cuda/include:$CPLUS_INCLUDE_PATH
+ENV CUDA_INC_DIR=/usr/local/cuda/include
+RUN pip3 install pycuda
+
+RUN git clone https://github.com/NVIDIA/MinkowskiEngine.git
+
+
+RUN cd MinkowskiEngine; python setup.py install --force_cuda --blas=openblas --cuda_home=/usr/local/cuda 
+
+RUN pip3 install -v git+https://github.com/mit-han-lab/torchsparse.git
+
+# COPY docker/install_python.sh install_python.sh
+# RUN bash install_python.sh gpu && rm -rf /root/.cache
+
+ENV WORKDIR=/tp3d
+WORKDIR $WORKDIR
+
+# COPY pyproject.toml pyproject.toml
+COPY . .
+# COPY torch_points3d/__init__.py torch_points3d/__init__.py
+# COPY README.md README.md
+
+
+ENV CUDA=cu117
+RUN pip3 install torch-spline-conv torch-scatter torch-sparse -f https://data.pyg.org/whl/torch-2.0.0+${CUDA}.html
+RUN pip3 install torchnet --no-deps
+
+
+# # Move torch_points_kernels direct into the site-packages folder of the venv
+COPY torch_points_kernel/torch_points_kernels /venv/lib/python3.8/site-packages/torch_points_kernels
+
+ENV TORCH_CUDA_ARCH_LIST="8.0;8.6"
+RUN pip3 install cuda-python==11.7.1
+ENV FORCE_ONLY_CUDA=1
+RUN pip3 install torch-points-kernels --no-deps
+
+# COPY requirements.txt requirements.txt
+# RUN pip3 install -r requirements.txt
+# RUN pip3 install . && rm -rf /root/.cache

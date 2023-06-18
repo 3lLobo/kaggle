@@ -12,6 +12,8 @@ import cv2
 from threading import Thread
 import asyncio
 
+
+
 async def load_np_file(np_file_path: str) -> np.ndarray:
     """Load a numpy file.
 
@@ -258,11 +260,6 @@ class PointCloudDB:
                 if f'_{n_pcld}_' in np_file:
                     pcld_files.append(np_file)
 
-            
-
-            
-        
-
             np_save = await asyncio.gather(*[self.get_and_del_npy_files(np_file, is_rm) for np_file in pcld_files])
             np_save = np.concatenate(np_save, axis=0)
 
@@ -274,11 +271,6 @@ class PointCloudDB:
             np.save(path_pointcloud.format(j=j), np_save)
             # np.save(path_pointcloud.format(j=j), np_concat)
             j += 1
-
-
-
-   
-        
 
 
 
@@ -296,7 +288,7 @@ if __name__ == '__main__':
 
     for data_type in tqdm.tqdm(['train', 'test']):
 
-        piece_ids = ['a', 'b'] if data_type == 'test' else [3]
+        piece_ids = ['a', 'b'] if data_type == 'test' else [1,2,3]
 
         for piece_id in tqdm.tqdm(piece_ids, colour='red'):
             img_path = './data/{}/{}/surface_volume/'.format(data_type, piece_id)
